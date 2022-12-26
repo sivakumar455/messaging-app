@@ -1,0 +1,79 @@
+server:
+  port: 8090
+
+spring:
+  cloud:
+    stream:
+      defaultBinder: kafka
+      kafka:
+        binder:
+          brokers: localhost
+          defaultBrokerPort: 9092
+          zkNodes: localhost
+          defaultZkPort: 2181
+          headers:
+            - test
+            - test2
+          replicationFactor: 1 # The replication factor of auto-created topics if autoCreateTopics is active.
+          autoCreateTopics: false
+        bindings:
+          order_subscribe:
+            consumer:
+              autoCommitOffset: false
+              enableDlq: true
+      #binders:
+        #kafka1: # defining specific properties of same binder
+          #type: kafka to get from spring.binders
+      bindings:
+        order_publish:
+          binder: kafka
+          destination: "order_out"
+          contentType: application/json
+          producer:
+            partitionCount: 1
+            headerMode: headers
+            #partitionKeyExpression:
+              # A SpEL expression that determines how to partition outbound data. If set, or if
+              # partitionKeyExtractorClass is set, outbound data on this channel will be partitioned, and
+              # partitionCount must be set to a value greater than 1 to be effective. The two options are mutually exclusive
+            #partitionKeyExtractorClass:
+              # A PartitionKeyExtractorStrategy implementation. If set, or if partitionKeyExpression
+              # is set, outbound data on this channel will be partitioned, and partitionCount must be set to
+              # a value greater than 1 to be effective. The two options are mutually exclusive
+
+            #partitionSelectorClass:
+              # A PartitionSelectorStrategy implementation. Mutually exclusive with
+              # partitionSelectorExpression. If neither is set, the partition will be selected as
+              # the hashCode(key) % partitionCount, where key is computed via either
+              # partitionKeyExpression or partitionKeyExtractorClass.
+            #partitionSelectorExpression:
+              # A SpEL expression for customizing partition selection. Mutually exclusive with
+              # partitionSelectorClass. If neither is set, the partition will be selected as the hashCode(key)% partitionCount,
+              # where key is computed via either partitionKeyExpression or partitionKeyExtractorClass.
+
+        order_subscribe:
+          binder: kafka # to set specific binder at channel level
+          destination: "order_out" # list of topics in case of consumer
+          group: "orders" # consumer group
+          contentType: application/json
+          consumer:
+            concurrency: 1 # default 1
+              # consumer application is consuming from a topic that has 3 partitions and you set the value of concurrency to 3.
+              # This will create 3 threads by the container in which each of them is handling a single partition from the topic
+              # (In fact, in the case of Kafka binder, 3 listener containers will be created behind the scenes)
+
+            partitioned: false # Whether the consumer receives data from a partitioned producer.
+
+            headerMode: headers # Default: embeddedHeaders
+              # When set to raw, disables header parsing on input. Effective only for messaging middleware that
+              # does not support message headers natively and requires header embedding. Useful when inbound
+              # data is coming from outside Spring Cloud Stream applications.
+
+            maxAttempts: 3 # The number of attempts of re-processing an inbound message.
+
+
+logging:
+  level:
+    org:
+      springframework: INFO
+      apache: WARN
